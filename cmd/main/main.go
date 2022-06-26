@@ -9,7 +9,7 @@ import (
 
 func main() {
 	r := mux.NewRouter()
-	routes.RegisterBookSotreRoutes(r)
+	routes.RegisterBookStoreRoutes(r)
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 

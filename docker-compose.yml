@@ -1,7 +1,7 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: bookstore_mysql
+    container_name: ${PROJECT_NAME:-bookstore}-mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: bookstore
@@ -18,7 +18,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: bookstore_api
+    container_name: ${PROJECT_NAME:-bookstore}-api
     ports:
       - "8080:8080"
     environment:

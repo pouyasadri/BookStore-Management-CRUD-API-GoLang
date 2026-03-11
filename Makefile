@@ -1,5 +1,8 @@
 .PHONY: help build run test clean docker-build docker-up docker-down swagger fmt lint
 
+PROJECT_NAME ?= $(shell basename "$(CURDIR)" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$$//g')
+COMPOSE_CMD = PROJECT_NAME=$(PROJECT_NAME) docker compose -p $(PROJECT_NAME)
+
 help:
 	@echo "BookStore Management API - Makefile"
 	@echo ""
@@ -47,19 +50,19 @@ lint:
 
 docker-build:
 	@echo "Building Docker image..."
-	docker build -t bookstore-api:latest .
+	$(COMPOSE_CMD) build
 
 docker-up:
 	@echo "Starting containers..."
-	docker-compose up -d
+	$(COMPOSE_CMD) up -d
 
 docker-down:
 	@echo "Stopping containers..."
-	docker-compose down
+	$(COMPOSE_CMD) down
 
 docker-logs:
 	@echo "Showing container logs..."
-	docker-compose logs -f
+	$(COMPOSE_CMD) logs -f
 
 clean:
 	@echo "Cleaning build artifacts..."

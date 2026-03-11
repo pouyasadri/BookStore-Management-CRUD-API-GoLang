@@ -1,0 +1,33 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Go
+*.o
+*.a
+*.so
+__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
+
+# Compiled binaries
+/cmd/main/main
+/bin/
+/dist/
+
+# Logs
+*.log
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride

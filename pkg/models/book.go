@@ -2,7 +2,10 @@ package models
 
 import (
 	"bookstore/pkg/config"
+	"flag"
 	"gorm.io/gorm"
+	"os"
+	"strings"
 )
 
 var db *gorm.DB
@@ -18,6 +21,20 @@ type Book struct {
 }
 
 func init() {
+	// When running `go test`, avoid connecting to a real database. Tests
+	// should be isolated and not require a MySQL instance. Detect test
+	// execution by checking for the testing flags (present when `go test`
+	// is running) and skip DB initialization in that case. Checking
+	// os.Args for any -test.* flags is more reliable during package init.
+	for _, a := range os.Args {
+		if strings.HasPrefix(a, "-test.") {
+			return
+		}
+	}
+	if flag.Lookup("test.v") != nil {
+		return
+	}
+
 	config.Connect()
 	db = config.GetDB()
 	db.AutoMigrate(&User{}, &Author{}, &Book{})

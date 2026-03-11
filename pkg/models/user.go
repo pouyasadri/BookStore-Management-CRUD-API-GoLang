@@ -8,9 +8,9 @@ import (
 
 type User struct {
 	ID        uint   `gorm:"primaryKey" json:"id"`
-	Username  string `json:"username" gorm:"uniqueIndex"`
-	Email     string `json:"email" gorm:"uniqueIndex"`
-	Password  string `json:"-"` // Never expose password in JSON
+	Username  string `json:"username" gorm:"type:varchar(255);uniqueIndex"`
+	Email     string `json:"email" gorm:"type:varchar(191);uniqueIndex"`
+	Password  string `json:"-" gorm:"type:varchar(64)"` // Never expose password in JSON
 	CreatedAt int64  `json:"createdAt"`
 	UpdatedAt int64  `json:"updatedAt"`
 }

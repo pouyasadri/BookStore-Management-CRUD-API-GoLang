@@ -14,7 +14,7 @@ type Book struct {
 	ID          uint   `gorm:"primaryKey" json:"id"`
 	Name        string `json:"name"`
 	Author      string `json:"author"`
-	AuthorID    uint   `json:"authorId,omitempty" gorm:"index"`
+	AuthorID    *uint  `json:"authorId,omitempty" gorm:"index"`
 	Publication string `json:"publication"`
 	CreatedAt   int64  `json:"createdAt"`
 	UpdatedAt   int64  `json:"updatedAt"`

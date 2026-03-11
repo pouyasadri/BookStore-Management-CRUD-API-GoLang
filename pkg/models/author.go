@@ -4,8 +4,8 @@ import "gorm.io/gorm"
 
 type Author struct {
 	ID        uint   `gorm:"primaryKey" json:"id"`
-	Name      string `json:"name" gorm:"index"`
-	Email     string `json:"email"`
+	Name      string `json:"name" gorm:"type:varchar(255);index"`
+	Email     string `json:"email" gorm:"type:varchar(255)"`
 	Biography string `json:"biography"`
 	Books     []Book `json:"books,omitempty" gorm:"foreignKey:AuthorID"`
 	CreatedAt int64  `json:"createdAt"`

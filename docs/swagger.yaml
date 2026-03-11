@@ -6,6 +6,54 @@ definitions:
       user:
         $ref: '#/definitions/controllers.UserInfo'
     type: object
+  controllers.AuthorCreateRequest:
+    properties:
+      biography:
+        example: Author of Clean Code
+        type: string
+      email:
+        example: robert@example.com
+        type: string
+      name:
+        example: Robert C. Martin
+        type: string
+    type: object
+  controllers.AuthorUpdateRequest:
+    properties:
+      biography:
+        example: Author of Clean Code
+        type: string
+      email:
+        example: robert@example.com
+        type: string
+      name:
+        example: Robert C. Martin
+        type: string
+    type: object
+  controllers.BookCreateRequest:
+    properties:
+      authorId:
+        example: 1
+        type: integer
+      name:
+        example: The Go Programming Language
+        type: string
+      publication:
+        example: Addison-Wesley Professional
+        type: string
+    type: object
+  controllers.BookUpdateRequest:
+    properties:
+      authorId:
+        example: 1
+        type: integer
+      name:
+        example: The Go Programming Language
+        type: string
+      publication:
+        example: Addison-Wesley Professional
+        type: string
+    type: object
   controllers.LoginRequest:
     properties:
       password:
@@ -13,6 +61,12 @@ definitions:
         type: string
       username:
         example: john_doe
+        type: string
+    type: object
+  controllers.RefreshRequest:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
     type: object
   controllers.RegisterRequest:
@@ -36,6 +90,70 @@ definitions:
       username:
         type: string
     type: object
+  models.Author:
+    properties:
+      biography:
+        type: string
+      books:
+        items:
+          $ref: '#/definitions/models.Book'
+        type: array
+      createdAt:
+        type: integer
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updatedAt:
+        type: integer
+    type: object
+  models.AuthorList:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Author'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      totalPage:
+        type: integer
+    type: object
+  models.Book:
+    properties:
+      authorId:
+        type: integer
+      createdAt:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      publication:
+        type: string
+      updatedAt:
+        type: integer
+    type: object
+  models.BookList:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Book'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      totalPage:
+        type: integer
+    type: object
   utils.ErrorResponse:
     properties:
       code:
@@ -44,6 +162,12 @@ definitions:
         type: string
       message:
         type: string
+    type: object
+  utils.SuccessResponse:
+    properties:
+      code:
+        type: integer
+      data: {}
     type: object
 info:
   contact: {}
@@ -78,6 +202,40 @@ paths:
       summary: User login
       tags:
       - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Generate a new JWT token from an existing valid token
+      parameters:
+      - description: Current JWT token
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Refresh JWT token
+      tags:
+      - auth
   /auth/register:
     post:
       consumes:
@@ -108,4 +266,336 @@ paths:
       summary: User registration
       tags:
       - auth
+  /authors:
+    get:
+      consumes:
+      - application/json
+      description: Get all authors with optional filtering by name
+      parameters:
+      - description: Filter by author name
+        in: query
+        name: name
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 10, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AuthorList'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Get authors with pagination
+      tags:
+      - authors
+    post:
+      consumes:
+      - application/json
+      description: Create a new author with required fields
+      parameters:
+      - description: Author data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.AuthorCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Author'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Create a new author
+      tags:
+      - authors
+  /authors/{authorId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an author by their ID
+      parameters:
+      - description: Author ID
+        in: path
+        name: authorId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Delete an author
+      tags:
+      - authors
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific author by their ID
+      parameters:
+      - description: Author ID
+        in: path
+        name: authorId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Author'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Get a single author by ID
+      tags:
+      - authors
+    put:
+      consumes:
+      - application/json
+      description: Update author fields (name, email, biography)
+      parameters:
+      - description: Author ID
+        in: path
+        name: authorId
+        required: true
+        type: integer
+      - description: Updated author data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.AuthorUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Author'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Update an existing author
+      tags:
+      - authors
+  /books:
+    get:
+      consumes:
+      - application/json
+      description: Get all books with optional filtering by author or publication
+      parameters:
+      - description: Filter by author name
+        in: query
+        name: author
+        type: string
+      - description: Filter by publication
+        in: query
+        name: publication
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 10, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.BookList'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Get books with pagination
+      tags:
+      - books
+    post:
+      consumes:
+      - application/json
+      description: Create a new book with required fields
+      parameters:
+      - description: Book data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.BookCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Book'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Create a new book
+      tags:
+      - books
+  /books/{bookId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a book by its ID
+      parameters:
+      - description: Book ID
+        in: path
+        name: bookId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Delete a book
+      tags:
+      - books
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific book by its ID
+      parameters:
+      - description: Book ID
+        in: path
+        name: bookId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Book'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Get a single book by ID
+      tags:
+      - books
+    put:
+      consumes:
+      - application/json
+      description: Update book fields (name, authorId, publication)
+      parameters:
+      - description: Book ID
+        in: path
+        name: bookId
+        required: true
+        type: integer
+      - description: Updated book data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.BookUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Book'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Update an existing book
+      tags:
+      - books
 swagger: "2.0"

@@ -1,12 +1,18 @@
 package utils
 
 import (
+	"os"
 	"testing"
 )
 
-func TestGenerateAndValidateToken(t *testing.T) {
+func setupJWTTest(t *testing.T) {
 	// Set JWT secret for testing
-	t.Setenv("JWT_SECRET", "test_secret_key")
+	os.Setenv("JWT_SECRET", "test_secret_key_for_testing")
+	InitJWT()
+}
+
+func TestGenerateAndValidateToken(t *testing.T) {
+	setupJWTTest(t)
 
 	token, err := GenerateToken(1, "testuser", "test@example.com")
 	if err != nil {
@@ -36,7 +42,7 @@ func TestGenerateAndValidateToken(t *testing.T) {
 }
 
 func TestInvalidToken(t *testing.T) {
-	t.Setenv("JWT_SECRET", "test_secret_key")
+	setupJWTTest(t)
 
 	_, err := ValidateToken("invalid_token")
 	if err == nil {
@@ -45,7 +51,7 @@ func TestInvalidToken(t *testing.T) {
 }
 
 func TestExpiredToken(t *testing.T) {
-	t.Setenv("JWT_SECRET", "test_secret_key")
+	setupJWTTest(t)
 
 	// This test would require setting up an expired token
 	// For now, just test that ValidateToken handles errors gracefully

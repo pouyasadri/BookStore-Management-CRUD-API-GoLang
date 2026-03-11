@@ -4,6 +4,7 @@ import (
 	"bookstore/pkg/models"
 	"bookstore/pkg/utils"
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -16,6 +17,10 @@ type RegisterRequest struct {
 type LoginRequest struct {
 	Username string `json:"username" example:"john_doe"`
 	Password string `json:"password" example:"securepassword123"`
+}
+
+type RefreshRequest struct {
+	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 }
 
 type AuthResponse struct {
@@ -44,7 +49,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload", err.Error())
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload", "")
 		return
 	}
 
@@ -53,10 +58,17 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if user already exists
+	// Check if username already exists
 	existingUser, _ := models.GetUserByUsername(req.Username)
 	if existingUser.ID != 0 {
 		utils.RespondWithError(w, http.StatusConflict, "User already exists", "Username is already taken")
+		return
+	}
+
+	// Check if email already exists
+	existingEmail, _ := models.GetUserByEmail(req.Email)
+	if existingEmail.ID != 0 {
+		utils.RespondWithError(w, http.StatusConflict, "User already exists", "Email is already registered")
 		return
 	}
 
@@ -70,7 +82,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 	token, err := utils.GenerateToken(user.ID, user.Username, user.Email)
 	if err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to generate token", err.Error())
+		log.Printf("Failed to generate token for user %d: %v", user.ID, err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Internal server error", "")
 		return
 	}
 
@@ -101,7 +114,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload", err.Error())
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload", "")
 		return
 	}
 
@@ -123,7 +136,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	token, err := utils.GenerateToken(user.ID, user.Username, user.Email)
 	if err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to generate token", err.Error())
+		log.Printf("Failed to generate token for user %d: %v", user.ID, err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Internal server error", "")
 		return
 	}
 
@@ -133,6 +147,58 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			ID:       user.ID,
 			Username: user.Username,
 			Email:    user.Email,
+		},
+	}
+
+	utils.RespondWithSuccess(w, http.StatusOK, response)
+}
+
+// Refresh godoc
+// @Summary Refresh JWT token
+// @Description Generate a new JWT token from an existing valid token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param input body RefreshRequest true "Current JWT token"
+// @Success 200 {object} AuthResponse
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 401 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Router /auth/refresh [post]
+func Refresh(w http.ResponseWriter, r *http.Request) {
+	var req RefreshRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload", "")
+		return
+	}
+
+	if req.Token == "" {
+		utils.RespondWithError(w, http.StatusBadRequest, "Validation failed", "token is required")
+		return
+	}
+
+	// Validate the token
+	claims, err := utils.ValidateToken(req.Token)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusUnauthorized, "Invalid or expired token", "")
+		return
+	}
+
+	// Generate a new token with the same claims
+	newToken, err := utils.GenerateToken(claims.UserID, claims.Username, claims.Email)
+	if err != nil {
+		log.Printf("Failed to generate refreshed token for user %d: %v", claims.UserID, err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Internal server error", "")
+		return
+	}
+
+	response := AuthResponse{
+		Token: newToken,
+		User: &UserInfo{
+			ID:       claims.UserID,
+			Username: claims.Username,
+			Email:    claims.Email,
 		},
 	}
 

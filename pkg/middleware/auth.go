@@ -3,6 +3,7 @@ package middleware
 import (
 	"bookstore/pkg/utils"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -28,7 +29,7 @@ func JWTMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Store claims in context for handlers to access
-		r.Header.Set("UserID", string(rune(claims.UserID)))
+		r.Header.Set("UserID", strconv.FormatUint(uint64(claims.UserID), 10))
 		r.Header.Set("Username", claims.Username)
 
 		next.ServeHTTP(w, r)

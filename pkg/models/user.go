@@ -1,8 +1,7 @@
 package models
 
 import (
-	"crypto/sha256"
-	"fmt"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -10,7 +9,7 @@ type User struct {
 	ID        uint   `gorm:"primaryKey" json:"id"`
 	Username  string `json:"username" gorm:"type:varchar(255);uniqueIndex"`
 	Email     string `json:"email" gorm:"type:varchar(191);uniqueIndex"`
-	Password  string `json:"-" gorm:"type:varchar(64)"` // Never expose password in JSON
+	Password  string `json:"-" gorm:"type:varchar(72)"` // bcrypt hash is up to 60 chars, 72 bytes for margin
 	CreatedAt int64  `json:"createdAt"`
 	UpdatedAt int64  `json:"updatedAt"`
 }
@@ -19,15 +18,21 @@ func (User) TableName() string {
 	return "users"
 }
 
-// HashPassword creates a SHA256 hash of the password
+// HashPassword creates a bcrypt hash of the password
 func HashPassword(password string) string {
-	hash := sha256.Sum256([]byte(password))
-	return fmt.Sprintf("%x", hash)
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		// In case of error, return empty string. Caller should handle this.
+		// This prevents password being stored in plaintext.
+		return ""
+	}
+	return string(hash)
 }
 
-// VerifyPassword checks if the provided password matches the stored hash
+// VerifyPassword checks if the provided password matches the stored bcrypt hash
 func (u *User) VerifyPassword(password string) bool {
-	return u.Password == HashPassword(password)
+	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+	return err == nil
 }
 
 func (u *User) CreateUser() *User {

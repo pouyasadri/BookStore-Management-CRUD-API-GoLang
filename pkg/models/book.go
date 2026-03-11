@@ -13,8 +13,7 @@ var db *gorm.DB
 type Book struct {
 	ID          uint   `gorm:"primaryKey" json:"id"`
 	Name        string `json:"name"`
-	Author      string `json:"author"`
-	AuthorID    *uint  `json:"authorId,omitempty" gorm:"index"`
+	AuthorID    uint   `json:"authorId" gorm:"index;not null"`
 	Publication string `json:"publication"`
 	CreatedAt   int64  `json:"createdAt"`
 	UpdatedAt   int64  `json:"updatedAt"`
@@ -70,12 +69,15 @@ func GetBooksWithPagination(author, publication string, params PaginationParams)
 
 	query := db
 	if author != "" {
-		query = query.Where("author LIKE ?", "%"+author+"%")
+		// Join with Author table and filter by author name
+		query = query.Joins("JOIN authors ON books.author_id = authors.id").
+			Where("authors.name LIKE ?", "%"+author+"%")
 	}
 	if publication != "" {
 		query = query.Where("publication LIKE ?", "%"+publication+"%")
 	}
 
+	// Count the filtered results (before pagination)
 	query.Model(&Book{}).Count(&total)
 
 	if params.Page < 1 {

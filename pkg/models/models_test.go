@@ -13,10 +13,17 @@ func TestUserPasswordHashing(t *testing.T) {
 		t.Error("Password should be hashed, not stored in plain text")
 	}
 
-	// Same password should produce same hash
+	// Bcrypt hashes are unique even for the same password (includes salt)
+	// so we verify by checking that both hashes verify the same password
 	hashedPassword2 := HashPassword(password)
-	if hashedPassword != hashedPassword2 {
-		t.Error("Same password should produce same hash")
+	user := &User{Password: hashedPassword}
+	user2 := &User{Password: hashedPassword2}
+
+	if !user.VerifyPassword(password) {
+		t.Error("First hash should verify the password")
+	}
+	if !user2.VerifyPassword(password) {
+		t.Error("Second hash should verify the password")
 	}
 }
 
@@ -36,14 +43,19 @@ func TestUserVerifyPassword(t *testing.T) {
 }
 
 func TestBookValidation(t *testing.T) {
+	authorID := uint(1)
 	book := &Book{
 		Name:        "Test Book",
-		Author:      "Test Author",
+		AuthorID:    authorID,
 		Publication: "Test Pub",
 	}
 
 	if book.Name == "" {
 		t.Error("Book name should not be empty")
+	}
+
+	if book.AuthorID == 0 {
+		t.Error("Book AuthorID should be set")
 	}
 }
 

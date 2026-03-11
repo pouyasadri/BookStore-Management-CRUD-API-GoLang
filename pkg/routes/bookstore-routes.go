@@ -8,15 +8,25 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const MaxBodySizeBytes = 1 * 1024 * 1024 // 1MB
+
 var RegisterBookStoreRoutes = func(router *mux.Router) {
 	// Apply global middleware
 	router.Use(middleware.RecoveryMiddleware)
 	router.Use(middleware.CORSMiddleware)
 	router.Use(middleware.LoggingMiddleware)
+	// Add request body size limit middleware
+	router.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.Body = http.MaxBytesReader(w, r.Body, MaxBodySizeBytes)
+			next.ServeHTTP(w, r)
+		})
+	})
 
 	// Auth routes (no JWT required)
 	router.HandleFunc("/auth/register", controllers.Register).Methods("POST")
 	router.HandleFunc("/auth/login", controllers.Login).Methods("POST")
+	router.HandleFunc("/auth/refresh", controllers.Refresh).Methods("POST")
 
 	// Health check endpoint
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

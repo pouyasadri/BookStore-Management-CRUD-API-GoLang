@@ -59,6 +59,7 @@ func GetAuthorsWithPagination(name string, params PaginationParams) *AuthorList 
 		query = query.Where("name LIKE ?", "%"+name+"%")
 	}
 
+	// Count the filtered results (before pagination)
 	query.Model(&Author{}).Count(&total)
 
 	if params.Page < 1 {
